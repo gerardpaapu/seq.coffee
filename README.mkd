@@ -1,0 +1,4 @@
+seq.coffee
+----------
+
+Porting my **hugely** popular sequences library to coffeescript, just as a learning exercise
