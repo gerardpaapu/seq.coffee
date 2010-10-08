@@ -138,6 +138,16 @@ This can be used to terminate iteration.
 Sequence::isEmpty = -> no
 Empty::isEmpty = -> yes
 
+###
+Sequence::take, Sequence::drop and Sequence::split
+--------------------------------------------------
+
+###
+
+Sequence::nth = (n) -> @drop(n).first()
+Eager::nth = (n) @array[n + @index]
+
+
 
 ###
 Sequence::append(seqs...)
@@ -150,7 +160,7 @@ Sequence::append = (seqs...) ->
     StreamClass =
         if @isInfinite() or $some seqs, isInfinite
             InfiniteStream
-        else @isFinite() and $every seqs, isFinite
+        else if @isFinite() and $every seqs, isFinite
             FiniteStream
         else
             Stream
@@ -160,15 +170,42 @@ Sequence::append = (seqs...) ->
     else
         new StreamClass @first(), => @rest().append seqs...
 
-
 Empty::append = (head, tail...) ->
     seq = Sequence.from(head)
     if tail.length > 0 then seq.append tail... else seq
 
-Sequence.fromArray = ->
-Sequence.fromString = ->
-Sequence.from = ->
 
+
+Sequence.fromArray = (arr) -> new Eager slice.call arr
+Sequence.fromString = (str) -> Sequence.fromArray str.split ""
+Sequence.fromObject = (obj) -> Sequence.fromArray(Sequence.fromArray [value, key] for key, value of obj)
+Sequence.from = (obj) ->
+    if obj instanceof Array or typeof obj is "array" or (obj.length? and obj.callee?)
+        return Sequence.fromArray obj
+
+    if obj instanceof String or typeof obj is "string"
+        return Sequence.fromString obj
+
+    if typeof obj is "object"
+        return Sequence.fromObject obj
+
+    Sequence.fromArray [obj]
+
+###
+Utilities
+###
+
+iter = (init..., fn) ->
+    iterate = (arr) ->
+        new InfiniteStream arr[0], -> iterate [arr[1..]..., fn(arr...)]
+
+    repeater = () -> new InfiniteStream fn(), repeater
+
+    if init.length > 0 then iterate init else repeater()
+
+repeat = (a) -> new InfiniteStream a, -> repeat a
+
+cycle = 
 ###
 $some, $every, $map, and $each are used internally as aliases to 
 the native array methods.
@@ -178,6 +215,7 @@ nativeSome = Array.prototype.some
 nativeEvery = Array.prototype.every
 nativeMap = Array.prototype.map
 nativeEach = Array.prototype.forEach
+slice = Array.prototype.slice
 
 $some =
     if nativeSome?
@@ -214,4 +252,24 @@ $each =
     else
         (arr, fn, bind) ->
             fn.call(bind, item) for item in arr
-            null
+            undefined
+
+Seq = (args...) ->
+    if args.length > 1
+        Sequence.from args
+    else
+        Sequence.from args[0]
+
+Seq.Sequence = Sequence
+Seq.Empty = Empty
+Seq.Stream = Stream
+Seq.InfiniteStream = InfiniteStream
+Seq.FiniteStream = FiniteStream
+Seq.Eager = Eager
+Seq.iter = iter
+
+
+if module?
+    module.exports = Seq
+else
+    this.Seq = Seq
