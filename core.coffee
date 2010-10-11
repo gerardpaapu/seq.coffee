@@ -26,6 +26,29 @@ class Eager extends Sequence
             new Eager @array, next
 
 ###
+
+
+a mutable interface for iterating through an immutable sequence
+
+for (var iter = new Seq.Iterator(seq); !iter.isEmpty(); iter.moveNext())
+    log( iter.current );
+###
+
+class Iterator
+    constructor: (@sequence) ->
+    isEmpty: -> @sequence.isEmpty()
+    moveNext: ->
+        throw new StopIteration if @isEmpty()
+        @sequence = @sequence.next()
+
+    current: -> @sequence.first()
+
+StopIteration = if window? and window.StopIteration?
+    window.StopIteration
+else
+    class StopIteration extends Error
+
+###
 Sequence::map(fn)
 -------------
 
@@ -220,9 +243,20 @@ Empty::append = (head, tail...) ->
     seq = Sequence.from head
     if tail.length > 0 then seq.append tail... else seq
 
+###
+Sequence.from, Sequence.fromArray, Sequence.fromString and Sequence.fromObject
+------------------------------------------------------------------------------
+
+
+###
+
 Sequence.fromArray = (arr) -> new Eager copyArray arr
+
 Sequence.fromString = (str) -> Sequence.fromArray str.split ""
-Sequence.fromObject = (obj) -> Sequence.fromArray( Sequence.fromArray [value, key] for key, value of obj )
+
+Sequence.fromObject = (obj) ->
+    Sequence.fromArray( Sequence.fromArray [value, key] for key, value of obj )
+
 Sequence.from = (obj) ->
     if obj instanceof Sequence then obj
 
@@ -280,7 +314,7 @@ repeat = (a) -> new InfiniteStream a, -> repeat a
 
 cycle = (items...) ->
     fn = (n) ->
-        new InfiniteStream items[i], ->
+        new InfiniteStream items[n], ->
             fn (n + 1) % items.length
 
     fn 0
@@ -292,7 +326,7 @@ zip = (seqs...) ->
     if seqs.length is 0 or $some seqs, method 'isEmpty'
         new Empty
     else
-        new StreamClass $map(seqs, method 'first'),
+        new StreamClass Sequence.fromArray($map seqs, method 'first'),
             -> zip $map(seqs, method 'rest')...
 
 map = (seqs..., fn) -> zip(seqs...).mapply(fn)
@@ -371,5 +405,8 @@ Seq.InfiniteStream = InfiniteStream
 Seq.FiniteStream = FiniteStream
 Seq.Eager = Eager
 Seq.iter = iter
+Seq.repeat = repeat
+Seq.cycle = cycle
+Seq.zip = zip
 
 module.exports = Seq
