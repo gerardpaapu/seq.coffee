@@ -141,13 +141,59 @@ Empty::isEmpty = -> yes
 ###
 Sequence::take, Sequence::drop and Sequence::split
 --------------------------------------------------
+Sequence::splitAt and Sequence::splitWith use DelayedSeq to avoid
+forcing an item unnecessarily (which can cause a program to fail)
+
+e.g. you might `seq.take 5` when the 6th item is unreachable, using
+DelayedSeq the 6th item will not be forced.
+
+Sequence::splitAt and Sequence::splitWith return a Split, a class
+that exists solely for this purpose. Split::take returns an Eager
+containing the head of the split. Split::drop returns a lazy sequence
+that contains the rest of the sequence.
 
 ###
 
+class Split
+    constructor: (@head, @tail) ->
+    take: -> Sequence.fromArray @head
+    drop: -> @tail
+
+class DelayedSeq
+    constructor: (@seq) ->
+    first: -> @seq().first()
+    rest: -> new DelayedSeq => @seq().rest()
+    force: -> @seq()
+    isEmpty: -> @seq().isEmpty()
+
+Sequence::splitAt = (n) ->
+    arr = []
+    seq = new DelayedSeq => this
+
+    while n-- and not seq.isEmpty()
+        arr.push seq.first()
+        seq = seq.rest()
+
+    new Split arr, seq.force()
+
+Sequence::splitWith = (fn) ->
+    arr = []
+    seq = new DelayedSeq => this
+
+    while fn seq.first() and not seq.isEmpty()
+        arr.push seq.first()
+        seq = seq.rest()
+
+    new Split arr, seq.force()
+
+Sequence::take = (n) -> @splitAt(n).take()
+Sequence::drop = (n) -> @splitAt(n).drop()
+
+Sequence::takeWhile = (fn) -> @splitWith(fn).take()
+Sequence::dropWhile = (fn) -> @splitWith(fn).drop()
+
 Sequence::nth = (n) -> @drop(n).first()
-Eager::nth = (n) @array[n + @index]
-
-
+Eager::nth = (n) -> @array[n + @index]
 
 ###
 Sequence::append(seqs...)
@@ -171,25 +217,52 @@ Sequence::append = (seqs...) ->
         new StreamClass @first(), => @rest().append seqs...
 
 Empty::append = (head, tail...) ->
-    seq = Sequence.from(head)
+    seq = Sequence.from head
     if tail.length > 0 then seq.append tail... else seq
 
-
-
-Sequence.fromArray = (arr) -> new Eager slice.call arr
+Sequence.fromArray = (arr) -> new Eager copyArray arr
 Sequence.fromString = (str) -> Sequence.fromArray str.split ""
-Sequence.fromObject = (obj) -> Sequence.fromArray(Sequence.fromArray [value, key] for key, value of obj)
+Sequence.fromObject = (obj) -> Sequence.fromArray( Sequence.fromArray [value, key] for key, value of obj )
 Sequence.from = (obj) ->
-    if obj instanceof Array or typeof obj is "array" or (obj.length? and obj.callee?)
-        return Sequence.fromArray obj
+    if obj instanceof Sequence then obj
 
-    if obj instanceof String or typeof obj is "string"
-        return Sequence.fromString obj
+    else if obj.toSequence? then obj.toSequence()
 
-    if typeof obj is "object"
-        return Sequence.fromObject obj
+    else if obj instanceof Array or typeof obj is "array" or (obj.length? and obj.callee?)
+        Sequence.fromArray obj
 
-    Sequence.fromArray [obj]
+    else if obj instanceof String or typeof obj is "string"
+        Sequence.fromString obj
+
+    else if typeof obj is "object" then Sequence.fromObject obj
+
+    else Sequence.fromArray [obj]
+
+###
+Sequence::flatten
+-----------------
+
+Where this is a sequence of sequences, returns a sequence of
+the items in those sequences. Will also include any non-sequence
+items. It will *not* recursively flatten, by design.
+
+e.g. ((1, 2, 3), 4, (5, 6)).flatten() => (1, 2, 3, 4, 5, 6)
+###
+
+Sequence::flatten = ->
+    Sequence.from(@first()).lazyAppend => @rest().flatten()
+
+## Sequence::lazyAppend exists only for the implementation of flatten
+Sequence::lazyAppend = (seqfn) ->
+    new Stream @first(), => @rest().lazyAppend(seqfn)
+
+Empty::lazyAppend = (seqfn) -> seqfn()
+
+Sequence::apply = (fn, bind) -> fn.apply bind, @toArray()
+
+Sequence::mapply = (fn) ->
+    @map (seq) -> Sequence.from(seq).apply fn
+
 
 ###
 Utilities
@@ -201,21 +274,52 @@ iter = (init..., fn) ->
 
     repeater = () -> new InfiniteStream fn(), repeater
 
-    if init.length > 0 then iterate init else repeater()
+    if init.length > 1 then iterate init else repeater()
 
 repeat = (a) -> new InfiniteStream a, -> repeat a
 
-cycle = 
+cycle = (items...) ->
+    fn = (n) ->
+        new InfiniteStream items[i], ->
+            fn (n + 1) % items.length
+
+    fn 0
+
+zip = (seqs...) ->
+    seqs = Sequence.from seq for seq in seqs
+    StreamClass = if $every seqs, method 'isInfinite' then InfiniteStream else Stream
+
+    if seqs.length is 0 or $some seqs, method 'isEmpty'
+        new Empty
+    else
+        new StreamClass $map(seqs, method 'first'),
+            -> zip $map(seqs, method 'rest')...
+
+map = (seqs..., fn) -> zip(seqs...).mapply(fn)
+
 ###
 $some, $every, $map, and $each are used internally as aliases to 
 the native array methods.
 ###
 
-nativeSome = Array.prototype.some
-nativeEvery = Array.prototype.every
-nativeMap = Array.prototype.map
-nativeEach = Array.prototype.forEach
-slice = Array.prototype.slice
+nativeSome = Array::some
+nativeEvery = Array::every
+nativeMap = Array::map
+nativeEach = Array::forEach
+slice = Array::slice
+
+copyArray = (obj) ->
+    # make a copy of the array and coerce collections into arrays
+    if obj.item?
+        i = obj.length
+        obj.item i while i--
+    else
+        slice.call obj
+
+method = (name, prefix...) ->
+    (obj, args...) -> obj[name] prefix.concat(args)...
+
+complement = (fn) -> (n) -> not fn(n)
 
 $some =
     if nativeSome?
@@ -225,7 +329,7 @@ $some =
             i = 0
             while i < arr.length
                 return true if fn.call bind, arr[i]
-                i ++
+                i++
             return false
 
 $every =
@@ -268,8 +372,4 @@ Seq.FiniteStream = FiniteStream
 Seq.Eager = Eager
 Seq.iter = iter
 
-
-if module?
-    module.exports = Seq
-else
-    this.Seq = Seq
+module.exports = Seq
