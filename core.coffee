@@ -3,8 +3,8 @@ class Sequence
     rest: -> throw "not implemented"
 
 class Empty extends Sequence
-    first: -> throw "Empty: no first element"
-    rest: -> throw "Empty: no rest sequence"
+    first: -> throw Error "Empty: no first element"
+    rest: -> throw Error "Empty: no rest sequence"
 
 class Stream extends Sequence
     constructor: (@firstv, @restfn) ->
@@ -25,6 +25,14 @@ class Eager extends Sequence
         else
             new Eager @array, next
 
+class Cons extends Sequence
+    constructor: (@_first, @_rest) ->
+    first: -> @_first
+    rest: -> @_rest
+    isEmpty: -> false
+    isInfinite: -> @_rest.isInfinite()
+    isFinite: -> @_rest.isFinite()
+
 ## Iterator
 ## --------
 ##
@@ -41,11 +49,6 @@ class Iterator
         @sequence = @sequence.rest()
 
     current: -> @sequence.first()
-
-StopIteration = if window? and window.StopIteration?
-    window.StopIteration
-else
-    class StopIteration extends Error
 
 ## Sequence::getLength()
 ## ---------------------
@@ -90,7 +93,7 @@ Sequence::remove = (fn) -> @filter complement(fn ? (x) -> !!x)
 
 Sequence::toString = -> "(...)"
 Empty::toString = -> "()"
-Eager::toString = -> "(" + @toArray().join(", ") + ")"
+Eager::toString = -> "(#{@toArray().join(', ')})"
 Stream::toString = -> "(#{@firstv}, ...)"
 
 ## Sequence::toArray and Sequence::toEager
@@ -113,7 +116,7 @@ Sequence::toArray = ->
 
 Empty::toArray = -> []
 Eager::toArray = -> @array[@index..]
-InfiniteStream::toArray = -> throw "InfiniteStream: cannot be converted to an Array"
+InfiniteStream::toArray = -> throw Error "InfiniteStream: cannot be converted to an Array"
 
 Sequence::toEager = -> new Eager @toArray()
 Eager::toEager = -> this
@@ -260,10 +263,10 @@ Eager::nth = (n) ->
     i = n + @index
 
     if parseInt(n) isnt n or n < 0
-        throw TypeError
+        throw TypeError "index must be an integer"
 
     if i >= @array.length
-        throw RangeError
+        throw RangeError "index out of range"
 
     @array[i]
 
@@ -448,7 +451,8 @@ $each =
             fn.call(bind, item) for item in arr
             undefined
 
-## I guess I should export things
+## Exporting
+## ---------
 
 Seq = (args...) ->
     if args.length > 1
@@ -462,13 +466,16 @@ Seq.Stream = Stream
 Seq.InfiniteStream = InfiniteStream
 Seq.FiniteStream = FiniteStream
 Seq.Eager = Seq.EagerSequence = Eager
+Seq.Cons = Cons
 
 Seq.from = Sequence.from
 Seq.list = (things...) -> Sequence.fromArray things
-
 Seq.iter = iter
 Seq.repeat = repeat
 Seq.cycle = cycle
 Seq.zip = zip
 
-@Seq = Seq
+Seq.isInfinite = method 'isInfinite' # Just to pass the current test suite
+
+
+if exports? then exports.Seq = Seq else @Seq = Seq
