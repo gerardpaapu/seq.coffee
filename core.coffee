@@ -468,6 +468,7 @@ Seq.FiniteStream = FiniteStream
 Seq.Eager = Seq.EagerSequence = Eager
 Seq.Cons = Cons
 
+Seq.map = map
 Seq.from = Sequence.from
 Seq.list = (things...) -> Sequence.fromArray things
 Seq.iter = iter

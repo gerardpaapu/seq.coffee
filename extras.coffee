@@ -38,7 +38,6 @@ InfiniteStream::reverse = ->
     throw TypeError "InfiniteStream cannot be reversed"
 
 Sequence::choose = (n) ->
-    throw "not Implemented"
     choose2 = (seq) ->
         if seq.isEmpty() then return new Empty()
 
@@ -53,7 +52,7 @@ Sequence::choose = (n) ->
 
         switch n
             when 1 then seq.map Seq.list
-            when 2 then choose seq
+            when 2 then choose2 seq
             else choose(seq.rest(), n - 1).map(prepend)
 
     choose this, n
@@ -73,7 +72,7 @@ Sequence::partition = (size, step) ->
         first = seq.take(size)
         rest = seq.drop(step)
 
-        if first.getLength() < step
+        if first.getLength() < size
             new Empty
         else
             new StreamClass first, -> slowpartition rest, size, step
@@ -102,6 +101,20 @@ Sequence::partition = (size, step) ->
 
     else
         slowpartition this, size, step
+
+Sequence::distinct = (eq) ->
+    eq ?= (a, b) -> a is b
+    StreamClass = @streamClass()
+
+    distinct = (seq) ->
+        return new Empty() if seq.isEmpty()
+
+        first = seq.first()
+        test = (a) -> eq(a, first)
+
+        new StreamClass first, -> distinct seq.rest().remove(test)
+
+    distinct this
 
 Seq.range = (a, b, c) ->
     range = (start, end, step) ->
@@ -160,3 +173,21 @@ Seq.randomIntegers = (min, max) ->
     floor = Math.floor; random = Math.random
     Seq.iter -> floor random * (max - min + 1) + min
 
+Seq.combine = (seqs...) ->
+    combine2 = (a, b) ->
+        _zip = (seq) -> Seq.zip(Seq.repeat(seq), b)
+
+        Seq.map(a, _zip).flatten()
+
+    combine = (first, second, rest...) ->
+        first = Seq.from(first)
+        seqs = Seq.map(arguments, Seq.from)
+        prepend = (c) -> first.map (seq) -> new Cons seq, c
+
+        switch arguments.length
+            when 0 then new Empty()
+            when 1 then first
+            when 2 then combine2 first, second
+            else Seq.apply(combine, seqs.rest()).map(prepend).flatten()
+
+    combine seqs...
