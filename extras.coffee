@@ -1,15 +1,15 @@
-Seq = @Seq
-Sequence = Seq.Sequence
-Eager = Seq.Eager
-Empty = Seq.Empty
-InfiniteStream = Seq.InfiniteStream
-FiniteStream = Seq.FiniteStream
+Seq = if require?
+    require('Seq').Seq
+else
+    @Seq
+
+{Sequence, Eager, Empty, InfiniteStream, FiniteStream} = Seq
 
 multiply = (a, b) ->  a * b
 add = (a, b) -> a + b
 
 Sequence::sum = -> @reduce add, 0
-Sequence::product = -> @reduce multiply, 0
+Sequence::product = -> @reduce multiply, 1
 Sequence::min = -> @reduce Math.min
 Sequence::max = -> @reduce Math.max
 
@@ -18,6 +18,10 @@ Sequence::invoke = (name, args...) ->
 
 Sequence::pluck = (key) ->
     @map (item) -> item[name]
+
+Sequence::plucks = (keys...) ->
+    @map (item) ->
+        Seq.map keys, (key) -> item[key]
 
 Sequence::slice = (from, to) ->
     @drop(from).take(to - from + 1)
@@ -149,7 +153,7 @@ Seq.zipply = (seq, fns...) ->
     id = (x) -> x
 
     # add the identity function to the head of fns
-    _fns = new FiniteStream id, -> Sequence.from fns
+    _fns = new Cons id, Sequence.fromArray fns
     _fns.map((fn) -> seq.map fn).zip()
 
 Seq.matches = (pattern, str) ->
@@ -170,24 +174,25 @@ Seq.matches = (pattern, str) ->
     matches()
 
 Seq.randomIntegers = (min, max) ->
-    floor = Math.floor; random = Math.random
+    {random, floor} = Math
     Seq.iter -> floor random * (max - min + 1) + min
 
 Seq.combine = (seqs...) ->
+    {map, from, zip, repeat, apply} = Seq
     combine2 = (a, b) ->
-        _zip = (seq) -> Seq.zip(Seq.repeat(seq), b)
+        _zip = (seq) -> zip(repeat(seq), b)
 
-        Seq.map(a, _zip).flatten()
+        map(a, _zip).flatten()
 
     combine = (first, second, rest...) ->
-        first = Seq.from(first)
-        seqs = Seq.map(arguments, Seq.from)
+        first = from(first)
+        seqs = map(arguments, from)
         prepend = (c) -> first.map (seq) -> new Cons seq, c
 
         switch arguments.length
             when 0 then new Empty()
             when 1 then first
             when 2 then combine2 first, second
-            else Seq.apply(combine, seqs.rest()).map(prepend).flatten()
+            else apply(combine, seqs.rest()).map(prepend).flatten()
 
     combine seqs...
