@@ -37,6 +37,10 @@ Sequence::reverse = ->
 InfiniteStream::reverse = ->
     throw TypeError "InfiniteStream cannot be reversed"
 
+Sequence::find = Sequence::detect = (test) ->
+    seq = @filter(test)
+    if seq.isEmpty() then null else seq.first()
+
 Sequence::choose = (n) ->
     choose2 = (seq) ->
         if seq.isEmpty() then return new Empty()
