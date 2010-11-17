@@ -29,26 +29,8 @@ class Cons extends Sequence
     constructor: (@_first, @_rest) ->
     first: -> @_first
     rest: -> @_rest
-    isEmpty: -> false
     isInfinite: -> @_rest.isInfinite()
     isFinite: -> @_rest.isFinite()
-
-## Iterator
-## --------
-##
-## a mutable interface for iterating through an immutable sequence
-## 
-##     for (var iter = new Seq.Iterator(seq); !iter.isEmpty(); iter.moveNext())
-##          log( iter.current() );
-
-class Iterator
-    constructor: (@sequence) ->
-    isEmpty: -> @sequence.isEmpty()
-    moveNext: ->
-        return false if @isEmpty()
-        @sequence = @sequence.rest()
-
-    current: -> @sequence.first()
 
 ## Sequence::getLength()
 ## ---------------------
@@ -68,6 +50,26 @@ Sequence::map = (fn) ->
     new StreamClass fn(@first()), => @rest().map(fn)
 
 Empty::map = (fn) -> new Empty
+
+Sequence::each = (fn) -> @map(fn).toEager()
+
+## Sequence::reduce and Sequence::foldl
+## ------------------------------------
+##
+## A left fold over the sequence.
+
+Sequence::reduce = Sequence::foldl = (fn, init) ->
+    # if there's no initializer, use the first item
+    unless init?
+        return @rest().reduce(fn, @first())
+
+    seq = this
+
+    until seq.isEmpty()
+        init = fn a, seq.first()
+        seq = seq.rest()
+
+    return init
 
 ## Sequence::filter and Sequence::remove
 ## -------------------------------------
@@ -93,8 +95,8 @@ Sequence::remove = (fn) -> @filter complement(fn ? (x) -> !!x)
 
 Sequence::toString = -> "(...)"
 Empty::toString = -> "()"
-Eager::toString = -> "(#{@toArray().join(', ')})"
-Stream::toString = -> "(#{@firstv}, ...)"
+Eager::toString = -> "(#{ @toArray().join(', ') })"
+Stream::toString = -> "(#{ @firstv }, ...)"
 
 ## Sequence::toArray and Sequence::toEager
 ## ---------------------------------------
@@ -106,11 +108,11 @@ Stream::toString = -> "(#{@firstv}, ...)"
 ## instead of an Array.
 
 Sequence::toArray = ->
-    ls = new Iterator this
+    seq = this
     out = []
-    until ls.isEmpty()
-        out.push ls.current()
-        ls.moveNext()
+    until seq.isEmpty()
+        out[out.length] = seq.first()
+        seq = seq.rest()
 
     return out
 
@@ -137,14 +139,12 @@ Sequence::purge = ->
 
 Sequence::toObject = ->
     dict = {}
-    addItem = (item) ->
-        dict[item.nth 1] = item.nth 0
 
     # We're actually after the side-effects
-    @map(addItem).doRun()
+    @each (item) -> dict[item.nth 1] = item.nth 0
 
     # But don't worry, we're back to functional code again
-    return dict
+    dict
 
 ## Sequence::doRun
 ## ---------------
@@ -236,7 +236,7 @@ Sequence::splitAt = (n) ->
     arr = []
     seq = new DelayedSeq => this
 
-    while n-- and not seq.isEmpty()
+    while not seq.isEmpty() and n--
         arr.push seq.first()
         seq = seq.rest()
 
@@ -258,7 +258,17 @@ Sequence::drop = (n) -> @splitAt(n).drop()
 Sequence::takeWhile = (fn) -> @splitWith(fn).take()
 Sequence::dropWhile = (fn) -> @splitWith(fn).drop()
 
-Sequence::nth = (n) -> @drop(n).first()
+Sequence::nth = (n) ->
+    if parseInt(n) isnt n or n < 0
+        throw TypeError "index must be an integer"
+
+    tail = @drop(n)
+
+    if tail.isEmpty()
+        throw RangeError "index out of range"
+    else
+        tail.first()
+
 Eager::nth = (n) ->
     i = n + @index
 
@@ -303,6 +313,7 @@ Sequence.fromArray = (arr) ->
 
 Sequence.fromString = (str) -> Sequence.fromArray str.split ""
 
+## converts from {key: value, ...} to((value, key) ...)
 Sequence.fromObject = (obj) ->
     Sequence.fromArray( Sequence.fromArray [value, key] for key, value of obj )
 
@@ -477,6 +488,5 @@ Seq.cycle = cycle
 Seq.zip = zip
 
 Seq.isInfinite = method 'isInfinite' # Just to pass the current test suite
-
 
 if exports? then exports.Seq = Seq else @Seq = Seq
