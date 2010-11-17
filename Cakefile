@@ -54,15 +54,14 @@ task "compress", "squash the javascript files for distribution", ->
 task "tests", "run the test suite against the latest compiled js", ->
     invoke "compile"
 
+    console.log "Running tests"
+
     testrunner = require "qunit"
-    testrunner.options.errorsOnly = no
+    testrunner.options.errorsOnly = yes
     testrunner.options.coverage = no
     testrunner.options.paths = ["#{process.cwd()}/build"]
 
-    testrunner.run
-         code: "build/core.js"
-         tests: "tests/core.js"
-
-    testrunner.run
-        code: "build/extras.js"
-        tests: "tests/extras.js"
+    testrunner.run [
+        {code: "build/core.js", tests: "tests/core.js"},
+        {code: "build/extras.js", tests: "tests/extras.js"}
+    ]
