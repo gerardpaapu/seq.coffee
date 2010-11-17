@@ -259,7 +259,11 @@ Sequence::takeWhile = (fn) -> @splitWith(fn).take()
 Sequence::dropWhile = (fn) -> @splitWith(fn).drop()
 
 Sequence::nth = (n) ->
+    if parseInt(n) isnt n or n < 0
+        throw TypeError "index must be an integer"
+
     tail = @drop(n)
+
     if tail.isEmpty()
         throw RangeError "index out of range"
     else
@@ -309,6 +313,7 @@ Sequence.fromArray = (arr) ->
 
 Sequence.fromString = (str) -> Sequence.fromArray str.split ""
 
+## converts from {key: value, ...} to((value, key) ...)
 Sequence.fromObject = (obj) ->
     Sequence.fromArray( Sequence.fromArray [value, key] for key, value of obj )
 
