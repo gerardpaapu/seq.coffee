@@ -239,7 +239,7 @@ Sequence::splitAt = (n) ->
     arr = []
     seq = new DelayedSeq => this
 
-    while not seq.isEmpty() and n--
+    while n-- and not seq.isEmpty()
         arr.push seq.first()
         seq = seq.rest()
 
