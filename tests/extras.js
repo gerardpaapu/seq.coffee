@@ -7,19 +7,17 @@ function throws(fn, _class, message){
     }
 }
 
-function $slice(arr, a, b){
-    return Array.prototype.slice.call(arr, a, b);
-}
+var slice, curry, op;
 
-function $curry(fn){
-    var args = $slice(arguments, 1);
+slice = Array.prototype.slice;
+
+curry = function (fn, args){
     return function (){
-        var args2 = $slice(arguments);
-        return fn.apply(null, args.concat(args2));
+        return fn.apply(null, args.concat.apply(args, arguments));
     };
-}
+};
 
-var op = function op(key){
+op = function (key){
     var operators = {
         "-": function(a, b) { return arguments.length < 2 ? -a : a -b; },
         "!": function(a) { return !a; },
@@ -43,12 +41,12 @@ var op = function op(key){
         "instanceof": function(a, b) { return a instanceof b; }
     };
 
-    var l = arguments.length, 
-        fun = operators[key],
-        args = Array.prototype.slice.call(arguments, 1); 
+    var fun = operators[key],
+        args = slice.call(arguments, 1); 
 
-    return l < 2 ? fun : $curry.apply(null, [fun].concat(args)); 
+    return arguments.length < 2 ? fun : curry(fun, args); 
 };
+
 
 test("Seq.combine", function (){
     var integers = Seq.iter(1, op('+', 1));
