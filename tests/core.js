@@ -127,10 +127,10 @@ test("Seq.EagerSequence#nth", function (){
     equals(seq.nth(0), 1, "index in bounds");
     equals(seq.nth(2), 3, "index in bounds");
 
-    throws(function (){ seq.nth(9) }, RangeError, "index out of bounds");
-    throws(function (){ seq.nth(0.5) }, TypeError, "non-integer index");
-    throws(function (){ seq.nth(-1) }, TypeError, "negative index");
-    throws(function (){ seq.nth("cats") }, TypeError, "bad index");
+    throws(function (){ seq.nth(9); }, RangeError, "index out of bounds");
+    throws(function (){ seq.nth(0.5); }, TypeError, "non-integer index");
+    throws(function (){ seq.nth(-1); }, TypeError, "negative index");
+    throws(function (){ seq.nth("cats"); }, TypeError, "bad index");
 });
 
 test("Seq.EagerSequence#doRun", function (){
@@ -162,15 +162,15 @@ test("Seq.InfiniteStream accessors", function (){
     ok(seq.rest() instanceof Seq.InfiniteStream, "Seq.InfiniteStream#first()");
     equals(seq.getLength(), Infinity, "Infinite Stream is Infinity long"); 
     ok(!seq.isEmpty(), "Infinite Stream is not empty");
-    throws(function (){ seq.toArray() }, Error, "Infinite Stream can't be converted to an Array");
+    throws(function (){ seq.toArray(); }, Error, "Infinite Stream can't be converted to an Array");
 });
 
 test("Seq.InfiniteStream eager methods", function (){
     var seq = Seq.repeat(1);
     
-    throws(function (){ seq.doRun() }, Error, "Seq.InfiniteStream#doRun throws an Error");
-    throws(function (){ seq.sort(op("<")) }, Error, "Seq.InfiniteStream#sort throws an Error");
-    throws(function (){ seq.reduce(op("+"), 0) }, Error, "Seq.InfiniteStream#reduce throws an Error");
+    throws(function (){ seq.doRun(); }, Error, "Seq.InfiniteStream#doRun throws an Error");
+    throws(function (){ seq.sort(op("<")); }, Error, "Seq.InfiniteStream#sort throws an Error");
+    throws(function (){ seq.reduce(op("+"), 0); }, Error, "Seq.InfiniteStream#reduce throws an Error");
 });
 
 test("Seq.InfiniteStream#flatten", function (){
@@ -180,7 +180,7 @@ test("Seq.InfiniteStream#flatten", function (){
 });
 
 test("Seq.InfiniteStream#splitAt", function (){
-    var seq = Seq.iter(1, op("+", 1));
+    var seq = Seq.iter(1, op('+', 1));
 
     same(seq.take(5).toArray(), [1, 2, 3, 4, 5], "Seq.InfiniteStream#take"); 
     ok(seq.drop(5) instanceof Seq.InfiniteStream, "Seq.InfiniteStream#drop"); 
@@ -209,15 +209,15 @@ test("Seq.Sequence#filter", function (){
     var seq = Seq.from([1, 2, 3, 4, 5, 6, 7, 8]), 
         seq2 = Seq.cycle(0, 1, 2, false, null).take(10);
 
+    function even(n){
+        return n % 2 === 0;
+    }
+
     same(seq.filter(even).toArray(), [2, 4, 6, 8], "filter for even values");
     same(seq.remove(even).toArray(), [1, 3, 5, 7], "remove even values");
 
     same(seq2.filter().toArray(), [1, 2, 1, 2], "filter for truthy values");
     same(seq2.remove().toArray(), [0, false, null, 0, false, null], "remove truthy values");
-
-    function even(n){
-        return n % 2 === 0;
-    }
 });
 
 
@@ -254,7 +254,7 @@ test("Seq.cycle", function (){
 });
 
 test("Seq.fromObject", function (){
-    same(Seq({'foo': "bar", 'baz': "quux"}).purge(), [["bar", "foo"], ["quux", "baz"]])
+    same(Seq({'foo': "bar", 'baz': "quux"}).purge(), [["bar", "foo"], ["quux", "baz"]]);
 });
 
 test("Seq.Sequence#toObject", function (){
