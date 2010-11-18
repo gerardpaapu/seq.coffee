@@ -60,7 +60,7 @@ Sequence::each = (fn) -> @map(fn).toEager()
 
 Sequence::reduce = Sequence::foldl = (fn, init) ->
     # if there's no initializer, use the first item
-    unless init?
+    unless arguments.length > 1
         return @rest().reduce(fn, @first())
 
     seq = this
@@ -70,6 +70,9 @@ Sequence::reduce = Sequence::foldl = (fn, init) ->
         seq = seq.rest()
 
     return init
+
+InfiniteStream::reduce = InfiniteStream::foldl = (fn, init) ->
+    throw TypeError "InfiniteStream cannot be reduced"
 
 ## Sequence::filter and Sequence::remove
 ## -------------------------------------
