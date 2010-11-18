@@ -66,7 +66,7 @@ Sequence::reduce = Sequence::foldl = (fn, init) ->
     seq = this
 
     until seq.isEmpty()
-        init = fn a, seq.first()
+        init = fn init, seq.first()
         seq = seq.rest()
 
     return init
