@@ -313,32 +313,32 @@ Empty::append = (head, tail...) ->
 
 ## Converting things to sequences 
 
-Sequence.fromArray = (arr) ->
+fromArray = Sequence.fromArray = (arr) ->
     if arr.length is 0
         new Empty
     else
         new Eager copyArray arr
 
-Sequence.fromString = (str) -> Sequence.fromArray str.split ""
+fromString = Sequence.fromString = (str) -> fromArray str.split ""
 
 ## converts from {key: value, ...} to((value, key) ...)
-Sequence.fromObject = (obj) ->
-    Sequence.fromArray( Sequence.fromArray [value, key] for key, value of obj )
+fromObject = Sequence.fromObject = (obj) ->
+    fromArray( fromArray [value, key] for key, value of obj )
 
 Sequence.from = (obj) ->
     if obj instanceof Sequence
         obj
 
-    else if obj.toSequence?
+    else if typeof(obj.toSequence) is "function"
         obj.toSequence()
 
-    else switch Object::toString.call object
-        when "[object Array]"     then Sequence.fromArray obj
-        when "[object Arguments]" then Sequence.fromArray obj
-        when "[object String]"    then Sequence.fromString obj
-        when "[object Object]"    then Sequence.fromObject obj
+    else switch toString.call obj
+        when "[object String]" then fromString obj
+        when "[object Object]" then fromObject obj
+        when "[object Array]", "[object Arguments]"
+            fromArray obj
 
-        else Sequence.fromArray [obj]
+        else fromArray [obj]
 
 ## Sequence::flatten
 ## -----------------
@@ -390,7 +390,7 @@ cycle = (items...) ->
     fn 0
 
 zip = (seqs...) ->
-    seqs = Sequence.from seq for seq in seqs
+    seqs = (Sequence.from seq for seq in seqs)
     StreamClass = if $every seqs, method 'isInfinite' then InfiniteStream else Stream
 
     if seqs.length is 0 or $some seqs, method 'isEmpty'
@@ -409,6 +409,7 @@ nativeEvery = Array::every
 nativeMap = Array::map
 nativeEach = Array::forEach
 slice = Array::slice
+toString = Object::toString
 
 copyArray = (obj) ->
     # make a copy of the array and coerce collections into arrays
@@ -417,9 +418,6 @@ copyArray = (obj) ->
         obj.item i while i--
     else
         slice.call obj
-
-isArray = (obj) -> Object::toString.call(obj) is "[object Array]"
-isArguments = (obj) -> Object::toString.call(obj) is "[object Arguments]"
 
 method = (name, prefix...) ->
     (obj, args...) ->
