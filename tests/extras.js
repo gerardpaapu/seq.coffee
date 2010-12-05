@@ -12,6 +12,7 @@ var slice, curry, op;
 slice = Array.prototype.slice;
 
 curry = function (fn, args){
+    args = args || [];
     return function (){
         return fn.apply(null, args.concat.apply(args, arguments));
     };
@@ -95,11 +96,15 @@ test("Seq.Sequence#partition(n, step)", function (){
     );
 
     ok(Seq.isInfinite(seq.partition(2, 0)), "Seq.Sequence#partition(n, 0) is Infinite");
-    throws(function (){ seq.partition(-1) }, TypeError, "Seq.Sequence#partition(-1) throws a TypeError");
-    throws(function (){ seq.partition(2, -1) }, TypeError, "Seq.Sequence#partition(n, -1) throws a TypeError");
+    throws(function (){ seq.partition(-1); }, TypeError, "Seq.Sequence#partition(-1) throws a TypeError");
+    throws(function (){ seq.partition(2, -1); }, TypeError, "Seq.Sequence#partition(n, -1) throws a TypeError");
 });
 
 test("Seq.Sequence#distinct", function (){
+    function caseInsensitive(a, b){
+        return a.toUpperCase() === b.toUpperCase();
+    }
+
     same(
         Seq.list(1, 1, 1, 2, 2, 2, 2, 2, 3).distinct().toArray(),
         [1, 2, 3],
@@ -111,10 +116,6 @@ test("Seq.Sequence#distinct", function (){
         ["a", "b", "c"],
         "Seq.Sequence#distinct with a custom equals function"
     );
-
-    function caseInsensitive(a, b){
-        return a.toUpperCase() === b.toUpperCase() 
-    }
 });
 
 test("Seq.Sequence#choose", function (){
