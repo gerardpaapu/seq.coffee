@@ -332,17 +332,13 @@ Sequence.from = (obj) ->
     else if obj.toSequence?
         obj.toSequence()
 
-    else if isArray(obj) or isArguments(obj)
-        Sequence.fromArray obj
+    else switch Object::toString.call object
+        when "[object Array]"     then Sequence.fromArray obj
+        when "[object Arguments]" then Sequence.fromArray obj
+        when "[object String]"    then Sequence.fromString obj
+        when "[object Object]"    then Sequence.fromObject obj
 
-    else if obj instanceof String or typeof obj is "string"
-        Sequence.fromString obj
-
-    else if typeof obj is "object"
-        Sequence.fromObject obj
-
-    else
-        Sequence.fromArray [obj]
+        else Sequence.fromArray [obj]
 
 ## Sequence::flatten
 ## -----------------
