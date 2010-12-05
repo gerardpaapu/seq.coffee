@@ -167,7 +167,7 @@ Seq.matches = (pattern, str) ->
 
     re = new RegExp pattern.source, flags
 
-    matches = () ->
+    matches = ->
         result = re.exec str
 
         if not result

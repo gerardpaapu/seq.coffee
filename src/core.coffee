@@ -372,7 +372,7 @@ iter = (values..., fn) ->
         slide = (arr, v) -> arr.slice(1).concat([v])
         new InfiniteStream arr[0], -> iterate slide arr, fn(arr...)
 
-    repeater = () -> new InfiniteStream fn(), repeater
+    repeater = -> new InfiniteStream fn(), repeater
 
     if values.length > 0
         iterate values
@@ -419,7 +419,6 @@ copyArray = (obj) ->
 
 isArray = (obj) -> Object::toString.call(obj) is "[object Array]"
 isArguments = (obj) -> Object::toString.call(obj) is "[object Arguments]"
-
 
 method = (name, prefix...) ->
     (obj, args...) ->
