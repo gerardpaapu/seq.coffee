@@ -177,9 +177,15 @@ Seq.matches = (pattern, str) ->
 
     matches()
 
-Seq.randomIntegers = (min, max) ->
-    {random, floor} = Math
-    Seq.iter -> floor random * (max - min + 1) + min
+Seq.randomIntegers = (a, b) ->
+    {random, floor} = Math # just caching
+
+    [min, max] = switch arguments.length
+        when 0 then [0, 10] # randomIntegers()
+        when 1 then [0, a]  # randomIntegers(max)
+        else [a, b]         # randomIntegers(min, max)
+
+    Seq.iter -> floor random() * (max - min + 1) + min
 
 Seq.combine = (seqs...) ->
     {map, from, zip, repeat, apply} = Seq
