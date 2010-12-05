@@ -196,6 +196,9 @@ InfiniteStream::isFinite = -> no
 InfiniteStream::isInfinite = -> yes
 
 Sequence::streamClass = ->
+    # When `@map`ing a sequence (or similar verbs)
+    # we need to produce a Stream with a similar
+    # finiteness characteristic.
     if @isInfinite()
         InfiniteStream
     else if @isFinite()
