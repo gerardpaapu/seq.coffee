@@ -128,7 +128,8 @@ Sequence::toEager = -> new Eager @toArray()
 Eager::toEager = -> this
 
 Sequence::sort = (predicate) ->
-    fn = (a, b) -> if predicate a, b then 0 else -1
+    predicate ?= (a, b) -> a < b
+    fn = (a, b) -> if predicate(a, b) then -1 else 1
 
     Sequence.fromArray @toArray().sort(fn)
 
