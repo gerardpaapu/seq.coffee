@@ -121,7 +121,8 @@ Sequence::toArray = ->
 
 Empty::toArray = -> []
 Eager::toArray = -> @array[@index..]
-InfiniteStream::toArray = -> throw Error "InfiniteStream: cannot be converted to an Array"
+InfiniteStream::toArray = ->
+    throw Error "InfiniteStream: cannot be converted to an Array"
 
 Sequence::toEager = -> new Eager @toArray()
 Eager::toEager = -> this
