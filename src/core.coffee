@@ -329,13 +329,13 @@ Sequence.from = (obj) ->
     if obj instanceof Sequence
         obj
 
-    else if typeof(obj.toSequence) is "function"
+    else if type(obj.toSequence) is "Function"
         obj.toSequence()
 
-    else switch toString.call obj
-        when "[object String]" then fromString obj
-        when "[object Object]" then fromObject obj
-        when "[object Array]", "[object Arguments]"
+    else switch type(obj)
+        when "String" then fromString obj
+        when "Object" then fromObject obj
+        when "Array", "Arguments"
             fromArray obj
 
         else fromArray [obj]
@@ -410,6 +410,10 @@ nativeMap = Array::map
 nativeEach = Array::forEach
 slice = Array::slice
 toString = Object::toString
+
+type = (o) ->
+    if o? then toString.call(o).slice(8, -1) else String(o)
+
 
 copyArray = (obj) ->
     # make a copy of the array and coerce collections into arrays
