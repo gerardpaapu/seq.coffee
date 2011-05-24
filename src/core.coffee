@@ -32,18 +32,18 @@ class Cons extends Sequence
     isInfinite: -> @_rest.isInfinite()
     isFinite: -> @_rest.isFinite()
 
-## Sequence::getLength()
-## ---------------------
+# Sequence::getLength()
+# ---------------------
 
 Sequence::getLength = -> 1 + @rest().getLength()
 Empty::getLength = -> 0
 InfiniteStream::getLength = -> Infinity
 
-## Sequence::map(fn)
-## -------------
-## 
-## For a Sequence `seq`, `seq.map(fn)` returns a lazy sequence of `fn(item)` for each 
-## item` in `seq`.
+# Sequence::map(fn)
+# -------------
+# 
+# For a Sequence `seq`, `seq.map(fn)` returns a lazy sequence of `fn(item)` for each 
+# item` in `seq`.
 
 Sequence::map = (fn) ->
     StreamClass = @streamClass()
@@ -53,10 +53,10 @@ Empty::map = (fn) -> new Empty
 
 Sequence::each = (fn) -> @map(fn).toEager()
 
-## Sequence::reduce and Sequence::foldl
-## ------------------------------------
-##
-## A left fold over the sequence.
+# Sequence::reduce and Sequence::foldl
+# ------------------------------------
+#
+# A left fold over the sequence.
 
 Sequence::reduce = Sequence::foldl = (fn, init) ->
     # if there's no initializer, use the first item
@@ -74,8 +74,8 @@ Sequence::reduce = Sequence::foldl = (fn, init) ->
 InfiniteStream::reduce = InfiniteStream::foldl = (fn, init) ->
     throw TypeError "InfiniteStream cannot be reduced"
 
-## Sequence::filter and Sequence::remove
-## -------------------------------------
+# Sequence::filter and Sequence::remove
+# -------------------------------------
 
 Sequence::filter = (fn) ->
     fn ?= (x) -> !!x
@@ -90,25 +90,25 @@ Empty::filter = (fn) -> new Empty
 
 Sequence::remove = (fn) -> @filter complement(fn ? (x) -> !!x)
 
-## Sequence::toString 
-## ------------------
-## 
-## Care is taken here not to force any evaluation, if you want to see the entire
-## contents of the sequence, use `seq.toEager().toString()`
+# Sequence::toString 
+# ------------------
+# 
+# Care is taken here not to force any evaluation, if you want to see the entire
+# contents of the sequence, use `seq.toEager().toString()`
 
 Sequence::toString = -> "(...)"
 Empty::toString = -> "()"
 Eager::toString = -> "(#{ @toArray().join(', ') })"
 Stream::toString = -> "(#{ @firstv }, ...)"
 
-## Sequence::toArray and Sequence::toEager
-## ---------------------------------------
-## 
-## Converting a Sequence to an Array is necessarily eager; therefore InfiniteStreams 
-## cannot be converted to arrays.
-## 
-## Sequence::toEager similarly forces the entire sequence but returns a Sequence
-## instead of an Array.
+# Sequence::toArray and Sequence::toEager
+# ---------------------------------------
+# 
+# Converting a Sequence to an Array is necessarily eager; therefore InfiniteStreams 
+# cannot be converted to arrays.
+# 
+# Sequence::toEager similarly forces the entire sequence but returns a Sequence
+# instead of an Array.
 
 Sequence::toArray = ->
     seq = this
@@ -151,34 +151,34 @@ Sequence::toObject = ->
     # But don't worry, we're back to functional code again
     dict
 
-## Sequence::doRun
-## ---------------
+# Sequence::doRun
+# ---------------
 Sequence::doRun = -> @toEager()
 
-## Sequence::isFinite and Sequence::isInfinite
-## -------------------------------------------
-## 
-## These should really be called "is Definitely Finite" and "is Definitely Infinite".
-## 
-## `isInfinite` returns `yes` if the sequence is *known* to be infinite, and `no` otherwise.
-## `isFinite` returns `yes` if the sequence is *known* to be finite, and `no` otherwise.
-## 
-## By default both methods return `no`, as Sequences cannot be assumed to terminate.
-## 
-## Methods that return streams propagate this information by returning an InfiniteStream, 
-## FiniteStream or Stream appropriately.
-## 
-## For example, where `a` is known to be infinite, `b` is known to be finite and `c` 
-## is not known to be either:
-## 
-##     a.append(b, c).isFinite is false
-##     a.append(b, c).isInfinite is true
-## 
-##     b.append(b, c).isFinite is false
-##     b.append(b, c).isInfinite is false
-## 
-##     b.append(b, b).isFinite is true
-##     b.append(b, b).isInfinite is false
+# Sequence::isFinite and Sequence::isInfinite
+# -------------------------------------------
+# 
+# These should really be called "is Definitely Finite" and "is Definitely Infinite".
+# 
+# `isInfinite` returns `yes` if the sequence is *known* to be infinite, and `no` otherwise.
+# `isFinite` returns `yes` if the sequence is *known* to be finite, and `no` otherwise.
+# 
+# By default both methods return `no`, as Sequences cannot be assumed to terminate.
+# 
+# Methods that return streams propagate this information by returning an InfiniteStream, 
+# FiniteStream or Stream appropriately.
+# 
+# For example, where `a` is known to be infinite, `b` is known to be finite and `c` 
+# is not known to be either:
+# 
+#     a.append(b, c).isFinite is false
+#     a.append(b, c).isInfinite is true
+# 
+#     b.append(b, c).isFinite is false
+#     b.append(b, c).isInfinite is false
+# 
+#     b.append(b, b).isFinite is true
+#     b.append(b, b).isInfinite is false
 
 Sequence::isFinite = -> no
 Sequence::isInfinite = -> no
@@ -206,28 +206,28 @@ Sequence::streamClass = ->
     else
         Stream
 
-## Sequence::isEmpty
-## -----------------
-## 
-## True for instances of Empty, false for all other Sequences.
-## 
-## This can be used to terminate iteration.
+# Sequence::isEmpty
+# -----------------
+# 
+# True for instances of Empty, false for all other Sequences.
+# 
+# This can be used to terminate iteration.
 
 Sequence::isEmpty = -> no
 Empty::isEmpty = -> yes
 
-## Sequence::take, Sequence::drop and Sequence::split
-## --------------------------------------------------
-## Sequence::splitAt and Sequence::splitWith use DelayedSeq to avoid
-## forcing an item unnecessarily (which can cause a program to fail)
-## 
-## e.g. you might `seq.take 5` when the 6th item is unreachable, using
-## DelayedSeq the 6th item will not be forced.
-## 
-## Sequence::splitAt and Sequence::splitWith return a Split, a class
-## that exists solely for this purpose. Split::take returns an Eager
-## containing the head of the split. Split::drop returns a lazy sequence
-## that contains the rest of the sequence.
+# Sequence::take, Sequence::drop and Sequence::split
+# --------------------------------------------------
+# Sequence::splitAt and Sequence::splitWith use DelayedSeq to avoid
+# forcing an item unnecessarily (which can cause a program to fail)
+# 
+# e.g. you might `seq.take 5` when the 6th item is unreachable, using
+# DelayedSeq the 6th item will not be forced.
+# 
+# Sequence::splitAt and Sequence::splitWith return a Split, a class
+# that exists solely for this purpose. Split::take returns an Eager
+# containing the head of the split. Split::drop returns a lazy sequence
+# that contains the rest of the sequence.
 
 class Split
     constructor: (@head, @tail) ->
@@ -288,8 +288,8 @@ Eager::nth = (n) ->
 
     @array[i]
 
-## Sequence::append(seqs...)
-## -------------------------
+# Sequence::append(seqs...)
+# -------------------------
 Sequence::append = (seqs...) ->
     StreamClass =
         if @isInfinite() or $some seqs, method "isInfinite"
@@ -308,10 +308,10 @@ Empty::append = (head, tail...) ->
     seq = Sequence.from head
     if tail.length > 0 then seq.append tail... else seq
 
-## Sequence.from, Sequence.fromArray, Sequence.fromString and Sequence.fromObject
-## ------------------------------------------------------------------------------
+# Sequence.from, Sequence.fromArray, Sequence.fromString and Sequence.fromObject
+# ------------------------------------------------------------------------------
 
-## Converting things to sequences 
+# Converting things to sequences 
 
 fromArray = Sequence.fromArray = (arr) ->
     if arr.length is 0
@@ -321,7 +321,7 @@ fromArray = Sequence.fromArray = (arr) ->
 
 fromString = Sequence.fromString = (str) -> fromArray str.split ""
 
-## converts from {key: value, ...} to((value, key) ...)
+# converts from {key: value, ...} to((value, key) ...)
 fromObject = Sequence.fromObject = (obj) ->
     fromArray( fromArray [value, key] for key, value of obj )
 
@@ -340,21 +340,21 @@ Sequence.from = (obj) ->
 
         else fromArray [obj]
 
-## Sequence::flatten
-## -----------------
+# Sequence::flatten
+# -----------------
 
-## Where this is a sequence of sequences, returns a sequence of
-## the items in those sequences. Will also include any non-sequence
-## items. It will *not* recursively flatten, by design.
-## 
-## e.g. ((1, 2, 3), 4, (5, 6)).flatten() => (1, 2, 3, 4, 5, 6)
+# Where this is a sequence of sequences, returns a sequence of
+# the items in those sequences. Will also include any non-sequence
+# items. It will *not* recursively flatten, by design.
+# 
+# e.g. ((1, 2, 3), 4, (5, 6)).flatten() => (1, 2, 3, 4, 5, 6)
 
 Sequence::flatten = ->
     Sequence.from(@first()).lazyAppend => @rest().flatten()
 
 Empty::flatten = -> new Empty
 
-## Sequence::lazyAppend exists only for the implementation of flatten
+# Sequence::lazyAppend exists only for the implementation of flatten
 Sequence::lazyAppend = (seqfn) ->
     new Stream @first(), => @rest().lazyAppend(seqfn)
 
@@ -366,7 +366,7 @@ Sequence::mapply = (fn) ->
     @map (seq) -> Sequence.from(seq).apply fn
 
 
-## Utilities
+# Utilities
 
 iter = (values..., fn) ->
     iterate = (arr) ->
@@ -401,8 +401,8 @@ zip = (seqs...) ->
 
 map = (seqs..., fn) -> zip(seqs...).mapply(fn)
 
-## $some, $every, $map, and $each are used internally as aliases to 
-## the native array methods.
+# $some, $every, $map, and $each are used internally as aliases to 
+# the native array methods.
 
 nativeSome = Array::some
 nativeEvery = Array::every
@@ -463,8 +463,8 @@ $each =
             fn.call(bind, item) for item in arr
             undefined
 
-## Exporting
-## ---------
+# Exporting
+# ---------
 
 Seq = (args...) ->
     if args.length > 1
