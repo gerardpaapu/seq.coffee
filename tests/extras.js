@@ -140,7 +140,7 @@ test("Seq.Sequence#unzip", function (){
 test("Seq.matches", function (){
     var text = "cats and Dogs and \ncats and dogs";
 
-//    same(Seq.matches(/[a-zA-Z]+/, text).toArray(), [["cats"], ["and"], ["Dogs"], ["and"], ["cats"], ["and"], ["dogs"]]);
+    same(Seq.matches(/[a-zA-Z]+/, text).toArray(), [["cats"], ["and"], ["Dogs"], ["and"], ["cats"], ["and"], ["dogs"]]);
     equals(Seq.matches(/dogs/i, text).getLength(), 2, "case-insensitive flag");
     equals(Seq.matches(/^cats/, text).getLength(), 1, "line-start without multiline flag");
     equals(Seq.matches(/^cats/m, text).getLength(), 2, "line-start with multiline flag");

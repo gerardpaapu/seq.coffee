@@ -62,6 +62,6 @@ task "tests", "run the test suite against the latest compiled js", ->
     testrunner.options.paths = ["#{process.cwd()}/build"]
 
     testrunner.run [
-        {code: "build/core.js", tests: "tests/core.js"},
-        {code: "build/extras.js", tests: "tests/extras.js"}
+        {code: "./build/core.js", tests: "./tests/core.js"},
+        {code: "./build/extras.js", tests: "./tests/extras.js"}
     ]

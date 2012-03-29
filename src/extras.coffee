@@ -1,5 +1,5 @@
 Seq = if require?
-    require('core').Seq
+    require('./core').Seq
 else
     @Seq
 
