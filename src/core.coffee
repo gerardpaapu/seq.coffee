@@ -2,9 +2,12 @@ class Sequence
     first: -> throw "not implemented"
     rest: -> throw "not implemented"
 
-class Empty extends Sequence
-    first: -> throw Error "Empty: no first element"
-    rest: -> throw Error "Empty: no rest sequence"
+Empty = -> 
+    Empty.instance ?= this
+
+Empty:: = new Sequence()
+Empty::first = -> throw Error "Empty: no first element"
+Empty::rest =  -> throw Error "Empty: no rest sequence"
 
 class Stream extends Sequence
     constructor: (@firstv, @restfn) ->

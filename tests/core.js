@@ -49,6 +49,7 @@ op = function (key){
 
 test("Seq.Empty()", function(){
     ok(new Seq.Empty() instanceof Seq.Sequence, "Seq.Empty inherits from Seq.Sequence");
+    equal(new Seq.Empty(), new Seq.Empty(), "Seq.Empty is a singleton");
 });
 
 test("Seq.Empty() accessors", function (){
